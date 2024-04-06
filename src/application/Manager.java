@@ -1,3 +1,5 @@
+package application;
+
 import accomodation.Accommodation;
 import accomodation.DateRange;
 import accomodation.JsonReader;

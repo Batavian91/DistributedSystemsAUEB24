@@ -1,4 +1,4 @@
-package mapreduce.nodes;
+package application;
 
 import accomodation.Accommodation;
 
@@ -21,6 +21,7 @@ public class Client extends Thread
         ObjectInputStream in = null;
         try
         {
+            System.out.println(STR."Price is \{t.getPrice()}");
             requestSocket = new Socket("127.0.0.1", 4321);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());

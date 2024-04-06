@@ -14,8 +14,8 @@ public class Accommodation implements Serializable
     private int totalRating;
     private int noOfReviews;
     private String photo;
-    protected TreeSet<DateRange> availableByOwnerDates = new TreeSet<>();
-    protected TreeSet<DateRange> bookedByVisitorDates = new TreeSet<>();
+    private TreeSet<DateRange> availableByOwnerDates = new TreeSet<>();
+    public TreeSet<DateRange> bookedByVisitorDates = new TreeSet<>();
 
     public Accommodation(String accName, int guests, String location, int price, int totalRating, int noOfReviews)
     {
@@ -85,7 +85,7 @@ public class Accommodation implements Serializable
         this.photo = photo;
     }
 
-    public void addAvailableDates(DateRange dateRange)
+    public String addAvailableDates(DateRange dateRange)
     {
         boolean acceptAccAddition = true;
 
@@ -100,15 +100,15 @@ public class Accommodation implements Serializable
         if (acceptAccAddition)
         {
             availableByOwnerDates.add(dateRange);
-            System.out.println("Accommodation was successfully added!");
+            return "Accommodation was successfully added!";
         } else
         {
-            System.out.println("The range you have chosen to add overlaps with existing dates!");
+            return "The range you have chosen to add overlaps with existing dates!";
         }
 
     }
 
-    public void addBookingDates(DateRange dateRange)
+    public String addBookingDates(DateRange dateRange)
     {
         boolean isAvailable = true;
 
@@ -123,10 +123,8 @@ public class Accommodation implements Serializable
 
         if (!isAvailable)
         {
-            System.out.println("The accommodation is not available for the dates chosen");
-            return;
+            return "The accommodation is not available for the dates chosen";
         }
-
         boolean isNotBooked = true;
 
         for (DateRange range : bookedByVisitorDates)
@@ -140,12 +138,15 @@ public class Accommodation implements Serializable
         if (isNotBooked)
         {
             bookedByVisitorDates.add(dateRange);
-            System.out.println("Accommodation was successfully booked!");
+            return "Accommodation was successfully booked!";
         } else
         {
-            System.out.println("The accommodation is already booked for the date range you have chosen!");
+            return "The accommodation is already booked for the date range you have chosen!";
         }
-
     }
 
+    public boolean hasBookings()
+    {
+        return this.bookedByVisitorDates != null;
+    }
 }
