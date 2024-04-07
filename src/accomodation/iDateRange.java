@@ -1,12 +1,12 @@
 package accomodation;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public interface iDateRange
 {
-    Date getStartDate();
+    LocalDate getStartDate();
 
-    Date getEndDate();
+    LocalDate getEndDate();
 
     boolean isAcceptedDateRange(DateRange range);
 

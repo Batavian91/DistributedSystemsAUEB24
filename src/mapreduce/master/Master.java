@@ -11,14 +11,14 @@ public class Master
     private ServerSocket server;
     private String[] nodes;
     private String[] replicas;
-    private static HashMap<long, Socket> activeConnections;
+    private HashMap<Long, Socket> activeConnections;
 
     public Master(int inPort)
     {
         try
         {
             this.server = new ServerSocket(inPort, 1000);
-            activeConnections = null;
+            this.activeConnections = null;
         } catch (IOException ioException)
         {
             System.err.println("Could not initialize Master!");
@@ -68,7 +68,7 @@ public class Master
         return activeConnections.get(id);
     }
 
-    public synchronized void removeConnection(long id)
+    public void removeConnection(long id)
     {
         try
         {

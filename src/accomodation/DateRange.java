@@ -1,23 +1,23 @@
 package accomodation;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class DateRange implements iDateRange, Comparable<DateRange>
 {
-    protected Date startDate;
-    protected Date endDate;
+    protected LocalDate startDate;
+    protected LocalDate endDate;
 
-    public DateRange(Date startDate, Date endDate)
+    public DateRange(LocalDate startDate, LocalDate endDate)
     {
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
     @Override
-    public Date getStartDate() { return this.startDate; }
+    public LocalDate getStartDate() { return this.startDate; }
 
     @Override
-    public Date getEndDate() { return this.endDate; }
+    public LocalDate getEndDate() { return this.endDate; }
 
     @Override
     public boolean isAcceptedDateRange(DateRange range)

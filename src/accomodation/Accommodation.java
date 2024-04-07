@@ -1,8 +1,6 @@
 package accomodation;
 
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.TreeSet;
 
 public class Accommodation implements Serializable
@@ -85,7 +83,7 @@ public class Accommodation implements Serializable
         this.photo = photo;
     }
 
-    public String addAvailableDates(DateRange dateRange)
+    public void addAvailableDates(DateRange dateRange)
     {
         boolean acceptAccAddition = true;
 
@@ -100,15 +98,14 @@ public class Accommodation implements Serializable
         if (acceptAccAddition)
         {
             availableByOwnerDates.add(dateRange);
-            return "Accommodation was successfully added!";
+            System.out.println("Accommodation was successfully added!");
         } else
         {
-            return "The range you have chosen to add overlaps with existing dates!";
+            System.out.println("The range you have chosen to add overlaps with existing dates!");
         }
-
     }
 
-    public String addBookingDates(DateRange dateRange)
+    public synchronized String addBookingDates(DateRange dateRange)
     {
         boolean isAvailable = true;
 

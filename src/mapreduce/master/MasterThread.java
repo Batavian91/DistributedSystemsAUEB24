@@ -56,15 +56,15 @@ public class MasterThread extends Thread
                 /* store connection - get unique id for mapping*/
                 long id = parent.storeConnection(connection);
 
-                /* if request is to add accommodations, map to specific workers */
+                /* if request is to add accommodations, map specific data to every worker */
                 if (msg.action().equals("AC"))
                 {
-                    mapToSpecific(id, msg);
+                    mapDifferentDataToAll(id, msg);
                 }
-                /* else map request to all workers */
+                /* else map same request to all workers */
                 else
                 {
-                    mapToAll(id, msg);
+                    mapSameDataToAll(id, msg);
                 }
 
                 /* do not close connection with client */
@@ -102,7 +102,7 @@ public class MasterThread extends Thread
         }
     }
 
-    private void mapToSpecific(long id, Message msg)
+    private void mapDifferentDataToAll(long id, Message msg)
     {
         try
         {
@@ -132,12 +132,12 @@ public class MasterThread extends Thread
                 // send to main node
                 ip = nodes[i].split(":")[0];
                 port = Integer.parseInt(nodes[i].split(":")[1]);
-                sendToWorker(ip, port, message);
+                sendDataToWorker(ip, port, message);
 
                 // send to replica
                 ip = replicas[i].split(":")[0];
                 port = Integer.parseInt(replicas[i].split(":")[1]);
-                sendToWorker(ip, port, message);
+                sendDataToWorker(ip, port, message);
             }
 
         } catch (Exception e)
@@ -147,7 +147,7 @@ public class MasterThread extends Thread
         }
     }
 
-    private void mapToAll(long id, Message msg)
+    private void mapSameDataToAll(long id, Message msg)
     {
         Message message = new Message(id, msg.action(), msg.parameters());
         String ip;
@@ -159,19 +159,19 @@ public class MasterThread extends Thread
             // send to main nodes
             ip = nodes[i].split(":")[0];
             port = Integer.parseInt(nodes[i].split(":")[1]);
-            sent = sendToWorker(ip, port, message);
+            sent = sendDataToWorker(ip, port, message);
 
-            if (!sent)
+            if (!sent || msg.action().equals("BOOK") || msg.action().equals("REVIEW"))
             // send to replicas
             {
                 ip = replicas[i].split(":")[0];
                 port = Integer.parseInt(replicas[i].split(":")[1]);
-                sendToWorker(ip, port, message);
+                sendDataToWorker(ip, port, message);
             }
         }
     }
 
-    private boolean sendToWorker(String ip, int port, Message msg)
+    private boolean sendDataToWorker(String ip, int port, Message msg)
     {
         Socket requestSocket = null;
         ObjectOutputStream out = null;

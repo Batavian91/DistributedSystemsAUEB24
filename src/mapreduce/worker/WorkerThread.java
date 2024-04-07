@@ -66,7 +66,7 @@ public class WorkerThread extends Thread
 
                     arrayList = (ArrayList<Accommodation>) msg.parameters();
                     parent.accommodations.addAll(arrayList);
-                    result = new Message(id, "AC", parent.getWorker());
+                    result = new Message(id, "AC", "OK");
 
                     break;
 
@@ -131,14 +131,16 @@ public class WorkerThread extends Thread
                     Accommodation accommodation = pair.getType1();
                     DateRange dtr = pair.getType2();
 
+                    String parameters = "";
+
                     for (Accommodation acc : parent.accommodations)
                     {
                         if (acc  == accommodation)
                         {
-                            acc.addBookingDates(dtr);
+                            parameters = acc.addBookingDates(dtr);
                         }
                     }
-                    result = new Message(id, "BOOK", "OK");
+                    result = new Message(id, "BOOK", parameters);
 
                     break;
 
