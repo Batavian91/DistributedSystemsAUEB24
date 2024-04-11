@@ -1,6 +1,6 @@
 package mapreduce.reducer;
 
-import accomodation.Accommodation;
+import global.Accommodation;
 
 import java.io.IOException;
 import java.net.ServerSocket;

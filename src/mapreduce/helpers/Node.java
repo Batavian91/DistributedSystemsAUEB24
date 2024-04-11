@@ -1,6 +1,6 @@
 package mapreduce.helpers;
 
-import accomodation.Accommodation;
+import global.Accommodation;
 
 import java.util.ArrayList;
 

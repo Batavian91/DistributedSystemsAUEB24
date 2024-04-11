@@ -1,7 +1,7 @@
 package mapreduce.master;
 
-import accomodation.Accommodation;
-import mapreduce.helpers.Message;
+import global.Accommodation;
+import global.Message;
 import mapreduce.helpers.Node;
 
 import java.io.IOException;

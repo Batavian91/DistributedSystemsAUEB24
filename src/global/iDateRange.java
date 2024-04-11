@@ -1,4 +1,4 @@
-package accomodation;
+package global;
 
 import java.time.LocalDate;
 

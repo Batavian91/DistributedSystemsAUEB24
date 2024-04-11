@@ -1,7 +1,7 @@
 package mapreduce.reducer;
 
-import accomodation.Accommodation;
-import mapreduce.helpers.Message;
+import global.Accommodation;
+import global.Message;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -22,6 +22,7 @@ public class ReducerThread extends Thread
         this.parent = parent;
     }
 
+    @SuppressWarnings("unchecked")
     public void run()
     {
         try

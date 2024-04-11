@@ -1,4 +1,4 @@
-package mapreduce.helpers;
+package global;
 
 import java.io.Serializable;
 

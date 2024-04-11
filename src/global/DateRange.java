@@ -1,8 +1,9 @@
-package accomodation;
+package global;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class DateRange implements iDateRange, Comparable<DateRange>
+public class DateRange implements iDateRange, Comparable<DateRange>, Serializable
 {
     protected LocalDate startDate;
     protected LocalDate endDate;

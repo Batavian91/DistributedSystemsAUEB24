@@ -1,5 +1,7 @@
-package accomodation;
+package application;
 
+import global.Accommodation;
+import global.DateRange;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

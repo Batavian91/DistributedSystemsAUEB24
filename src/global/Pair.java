@@ -1,6 +1,8 @@
-package mapreduce.helpers;
+package global;
 
-public class Pair<T1, T2>
+import java.io.Serializable;
+
+public class Pair<T1, T2>  implements Serializable
 {
     private final T1 type1;
     private final T2 type2;

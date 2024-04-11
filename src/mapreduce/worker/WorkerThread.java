@@ -1,9 +1,9 @@
 package mapreduce.worker;
 
-import accomodation.Accommodation;
-import accomodation.DateRange;
-import mapreduce.helpers.Message;
-import mapreduce.helpers.Pair;
+import global.Accommodation;
+import global.DateRange;
+import global.Message;
+import global.Pair;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
