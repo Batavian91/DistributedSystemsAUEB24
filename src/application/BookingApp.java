@@ -1,147 +1,190 @@
 package application;
 
-import global.*;
+import global.DateRange;
+import global.Filter;
+import global.Pair;
+import global.Room;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class BookingApp
 {
-    private final String masterIP;
-    private final int masterPort;
-
-    public BookingApp(String master)
+    public BookingApp()
     {
-        masterIP = master.split(":")[0];
-        masterPort = Integer.parseInt(master.split(":")[1]);
+        System.out.println("Welcome to PHILOXENIA!");
     }
 
-    public void add(String filepath)
+    public static void main(String[] args)
     {
-        ArrayList<Accommodation> arrayList = new JsonReader().readAccommodationsFromFile(filepath);
-        Message request = new Message(0, Action.ADD.OPTION, arrayList);
-        Message response = sendToMaster(request);
+        BookingApp dummy = new BookingApp();
 
-        if (response == null)
-            System.out.println("Addition was unsuccessful! Please, try again!");
-        else
-            System.out.println((String) response.parameters());
-    }
+        String master = "127.0.0.1:4321";
+        BookingAgent agent = new BookingAgent(master);
 
-    @SuppressWarnings("unchecked")
-    public void print(DateRange dateRange)
-    {
-        Message request = new Message(0, Action.PRINT.OPTION, dateRange);
-        Message response = sendToMaster(request);
+        Scanner scanner = new Scanner(System.in);
+        boolean loop = true;
+        String exit;
+        int choice;
+        int mChoice;
+        int vChoice;
+        int v2Choice;
 
-        if (response != null)
+        while (loop)
         {
-            if (response.parameters() != null)
+            // request user input - accept specific values
+            do
             {
-                ArrayList<Room> rooms = (ArrayList<Room>)response.parameters();
+                dummy.displayUserChoices();
+                choice = scanner.nextInt();
+            } while (choice != 0 && choice != 1 && choice != 2);
 
-                for (Room room : rooms)
+            // manager operations
+            if (choice == 1)
+            {
+                do
                 {
-                    System.out.println(room.toString());
+                    dummy.displayManagerChoices();
+                    mChoice = scanner.nextInt();
+                } while (mChoice != 0 && mChoice != 1 && mChoice != 2);
+
+                // add accommodations
+                if (mChoice == 1)
+                {
+                    String path = STR."\{System.getProperty("user.dir")}\\resources\\testRoom.json";
+                    agent.add(path);
                 }
-            } else
-            {
-                System.out.println("No rooms to print!");
+                // print reservations
+                else if (mChoice == 2)
+                {
+                    DateRange dtRange = new DateRange(LocalDate.MIN, LocalDate.MAX);
+                    agent.print(dtRange);
+                }
             }
-        } else
-        {
-            System.out.println("Printing reservations was unsuccessful! Please, try again!");
+            // visitor operations
+            else if (choice == 2)
+            {
+                do
+                {
+                    dummy.displayVisitorChoices();
+                    vChoice = scanner.nextInt();
+                } while (vChoice != 0 && vChoice != 1);
+
+                // search
+                if (vChoice == 1)
+                {
+                    Filter filter = dummy.filter();
+                    ArrayList<Room> rooms = agent.search(filter);
+
+                    if (rooms == null)
+                    {
+                        System.out.println("\nNo rooms were found!");
+                    } else
+                    {
+                        // display rooms
+                        int index = 0;
+                        for (Room room : rooms)
+                            System.out.println(STR."\{index++}: \{room}");
+
+                        do
+                        {
+                            dummy.displayExtraVisitorChoices();
+                            v2Choice = scanner.nextInt();
+                        } while (v2Choice != 0 && v2Choice != 1 && v2Choice != 2);
+
+                        // book
+                        if (v2Choice == 1)
+                        {
+                            System.out.println("\nChoose a room to book...");
+                            int r = scanner.nextInt();
+
+                            System.out.println("Enter dates...");
+                            LocalDate dt1 = LocalDate.parse(scanner.nextLine());
+                            LocalDate dt2 = LocalDate.parse(scanner.nextLine());
+                            DateRange range = new DateRange(dt1, dt2);
+
+                            String name = rooms.get(--r).NAME;
+                            Pair<String, DateRange> room = new Pair<>(name, range);
+
+                            agent.book(room);
+
+                        }
+                        // review
+                        else if (v2Choice == 2)
+                        {
+                            System.out.println("\nChoose a room to review...");
+                            int r = scanner.nextInt();
+
+                            System.out.println("Enter stars (1,2,3,4,5)...");
+                            int stars = scanner.nextInt();
+
+                            String name = rooms.get(--r).NAME;
+                            Pair<String, Integer> room = new Pair<>(name, stars);
+
+                            agent.review(room);
+                        }
+                    }
+                }
+            }
+
+            // continue or exit
+            System.out.println("\nDo you wish to exit the app? (Y/N)");
+            do
+            {
+                exit = scanner.nextLine();
+            } while (!(exit.equalsIgnoreCase("Y") || exit.equalsIgnoreCase("N")));
+
+            loop = exit.equalsIgnoreCase("N");
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public ArrayList<Room> search(Filter filters)
+    private void displayUserChoices()
     {
-        Message request = new Message(0, Action.SEARCH.OPTION, filters);
-        Message response = sendToMaster(request);
-
-        if (response != null)
-            if (response.parameters() != null)
-                return (ArrayList<Room>)response.parameters();
-
-        return null;
+        System.out.println("\nChoose type of user:");
+        System.out.println("0. EXIT");
+        System.out.println("1. MANAGER");
+        System.out.println("2. VISITOR");
     }
 
-    public String book(Pair<String, DateRange> room)
+    private void displayManagerChoices()
     {
-        Message request = new Message(0, Action.BOOK.OPTION, room);
-        Message response = sendToMaster(request);
-
-        if (response == null)
-            return "Booking was unsuccessful! Please, try again!";
-        else
-            return (String) response.parameters();
+        System.out.println("\nChoose an option:");
+        System.out.println("0. EXIT");
+        System.out.println("1. ADD ROOMS");
+        System.out.println("2. PRINT RESERVATIONS");
     }
 
-    public void review(Pair<String, Integer> star)
+    private void displayVisitorChoices()
     {
-        Message request = new Message(0, Action.REVIEW.OPTION, star);
-        Message response = sendToMaster(request);
-
-        if (response == null)
-            System.out.println("Your review could not be entered! Please, try again!");
-        else
-            System.out.println((String) response.parameters());
+        System.out.println("\nChoose an option:");
+        System.out.println("0. EXIT");
+        System.out.println("1. SEARCH");
     }
 
-    private Message sendToMaster(Message request)
+    private void displayExtraVisitorChoices()
     {
-        Socket requestSocket = null;
-        ObjectOutputStream out = null;
-        ObjectInputStream in = null;
-        Message response = null;
-
-        try
-        {
-            requestSocket = new Socket(masterIP, masterPort);
-            out = new ObjectOutputStream(requestSocket.getOutputStream());
-            in = new ObjectInputStream(requestSocket.getInputStream());
-
-            /*handshake with master*/
-            out.writeObject("CLIENT: Hello, MASTER!");
-            out.flush();
-            String handshake = (String) in.readObject();
-            System.out.println(handshake);
-
-            out.writeObject(request);
-            out.flush();
-
-            response = (Message)in.readObject();
-
-        } catch (UnknownHostException unknownHost)
-        {
-            System.err.println("You are trying to connect to an unknown host!");
-        } catch (IOException ioException)
-        {
-            System.err.println("An unexpected interruption occurred while trying to send data to Workers!");
-            //ioException.printStackTrace();
-        } catch (ClassNotFoundException e)
-        {
-            System.err.println("Class was not found!");
-            //e.printStackTrace();
-        } finally
-        {
-            try
-            {
-                in.close();
-                out.close();
-                requestSocket.close();
-            } catch (IOException ioException)
-            {
-                System.err.println("Unable to close stream instances in client!");
-                //ioException.printStackTrace();
-            }
-        }
-        return response;
+        System.out.println("\nChoose an operation:");
+        System.out.println("0. EXIT");
+        System.out.println("1. BOOK");
+        System.out.println("2. REVIEW");
     }
 
+    private Filter filter()
+    {
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Insert area...");
+        String area = scan.nextLine();
+        System.out.println("Insert dates...");
+        LocalDate dt1 = LocalDate.parse(scan.nextLine());
+        LocalDate dt2 = LocalDate.parse(scan.nextLine());
+        DateRange range = new DateRange(dt1, dt2);
+        System.out.println("Insert number of guests...");
+        int guests = scan.nextInt();
+        System.out.println("Insert price...");
+        int price = scan.nextInt();
+        System.out.println("Insert stars...");
+        int stars = scan.nextInt();
+        return new Filter(area, range, guests, price, stars);
+    }
 }
