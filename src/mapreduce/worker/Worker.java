@@ -20,7 +20,7 @@ public class Worker
         {
             this.server = new ServerSocket(inPort, 1000);
             this.worker = worker;
-            this.accommodations = null;
+            this.accommodations = new ArrayList<>();
         } catch (IOException ioException)
         {
             System.err.println("Could not initialize Worker!");

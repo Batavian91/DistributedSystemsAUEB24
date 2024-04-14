@@ -1,5 +1,6 @@
 package mapreduce.reducer;
 
+import global.Action;
 import global.Message;
 
 import java.io.IOException;
@@ -10,13 +11,13 @@ import java.net.UnknownHostException;
 
 public class RSenderThread extends Thread
 {
-    private final long id;
-    private final Reducer parent;
+    private final long ID;
+    private final Reducer PARENT;
 
     public RSenderThread(long id, Reducer parent)
     {
-        this.id = id;
-        this.parent = parent;
+        ID = id;
+        PARENT = parent;
     }
 
     public void run()
@@ -27,22 +28,17 @@ public class RSenderThread extends Thread
 
         try
         {
-            Message message;
+            Message message = reduce();
 
-            if (parent.data.containsKey(id))
-                message = new Message(id, "REPLY", parent.data.get(id));
-            else
-                message = new Message(id, "REPLY", "Data entered successfully!");
-
-            String ip = parent.getMaster().split(":")[0];
-            int port = Integer.parseInt(parent.getMaster().split(":")[1]);
+            String ip = PARENT.getMaster().split(":")[0];
+            int port = Integer.parseInt(PARENT.getMaster().split(":")[1]);
 
             requestSocket = new Socket(ip, port);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
 
-            /*handshake with master*/
-            out.writeObject("REDUCER: Hello, MASTER!");
+            /* handshake with master thread */
+            out.writeObject("REDUCER: Hello, MASTER!\n");
             out.flush();
             String handshake = (String) in.readObject();
             System.out.println(handshake);
@@ -50,8 +46,7 @@ public class RSenderThread extends Thread
             out.writeObject(message);
             out.flush();
 
-            parent.activeRequests.remove(id);
-            parent.data.remove(id);
+            PARENT.removeRequest(ID);
 
         } catch (UnknownHostException unknownHost)
         {
@@ -77,6 +72,11 @@ public class RSenderThread extends Thread
                 //ioException.printStackTrace();
             }
         }
+    }
+
+    private Message reduce()
+    {
+        return new Message(ID, Action.ADD, "\nOK from Reducer!");
     }
 
 }

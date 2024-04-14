@@ -1,8 +1,8 @@
 package mapreduce.master;
 
 import global.Accommodation;
+import global.Action;
 import global.Message;
-import mapreduce.helpers.Node;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -13,27 +13,27 @@ import java.util.ArrayList;
 
 public class MasterThread extends Thread
 {
-    private final Socket connection;
-    private final Master parent;
+    private final Socket CONNECTION;
+    private final Master PARENT;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
-    private final String[] nodes;
-    private final String[] replicas;
+    private final String[] NODES;
+    private final String[] REPLICAS;
 
     public MasterThread(Socket connection, Master parent)
     {
-        this.connection = connection;
-        this.parent = parent;
-        nodes = parent.getNodes();
-        replicas = parent.getReplicas();
+        CONNECTION = connection;
+        PARENT = parent;
+        NODES = parent.getNodes();
+        REPLICAS = parent.getReplicas();
     }
 
     public void run()
     {
         try
         {
-            outputStream = new ObjectOutputStream(connection.getOutputStream());
-            inputStream = new ObjectInputStream(connection.getInputStream());
+            outputStream = new ObjectOutputStream(CONNECTION.getOutputStream());
+            inputStream = new ObjectInputStream(CONNECTION.getInputStream());
         } catch (IOException ioException)
         {
             System.err.println(STR."Unable to create stream instances in Master Thread \{threadId()}");
@@ -41,23 +41,23 @@ public class MasterThread extends Thread
         }
         try
         {
-            /*two-way handshake*/
+            /* two-way handshake */
             String handshake = (String) inputStream.readObject();
             System.out.println(handshake);
-            outputStream.writeObject("MASTER: Greetings! What can I do for you?");
+            outputStream.writeObject("MASTER: Greetings! What can I do for you?\n");
             outputStream.flush();
 
-            /*read object*/
+            /* read message sent either from client or from reducer */
             Message msg = (Message) inputStream.readObject();
 
             /* if client */
             if (handshake.startsWith("CLIENT"))
             {
                 /* store connection - get unique id for mapping*/
-                long id = parent.storeConnection(connection);
+                long id = PARENT.storeConnection(new SocketSet(CONNECTION, outputStream, inputStream));
 
                 /* if request is to add accommodations, map specific data to every worker */
-                if (msg.action().equals("AC"))
+                if (msg.action().equals(Action.ADD))
                 {
                     mapDifferentDataToAll(id, msg);
                 }
@@ -73,16 +73,15 @@ public class MasterThread extends Thread
             {
                 long rid = msg.id();
 
-                /* close connection with reducer*/
+                /* close connection with reducer */
                 inputStream.close();
                 outputStream.close();
 
-                /* retrieve active connection with client */
-                Socket con = parent.getActiveConnectionById(rid);
-                sendDataToClient(con, msg.parameters());
+                /* send data to client */
+                sendDataToClient(rid, msg.parameters());
 
-                /* close connection with client */
-                parent.removeConnection(rid);
+                /* remove connection from map */
+                PARENT.removeConnection(rid);
 
             } else
             {
@@ -102,6 +101,7 @@ public class MasterThread extends Thread
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void mapDifferentDataToAll(long id, Message msg)
     {
         try
@@ -109,41 +109,41 @@ public class MasterThread extends Thread
             ArrayList<Accommodation> accommodations = (ArrayList<Accommodation>) msg.parameters();
 
             /* use a table of nodes to split equally accommodations to workers */
-            Node[] nodesToStoreAcc = new Node[nodes.length];
+            Node[] nodesToStoreAcc = new Node[NODES.length];
 
-            for (int i = 0; i < nodes.length; i++)
+            for (int i = 0; i < NODES.length; i++)
             {
                 nodesToStoreAcc[i] = new Node(i);
             }
 
             for (Accommodation acc : accommodations)
             {
-                int nodeID = acc.getAccName().hashCode() % nodes.length;
+                int nodeID = Math.abs(acc.getAccName().hashCode() % NODES.length);
                 nodesToStoreAcc[nodeID].arrayList.add(acc);
             }
 
             String ip;
             int port;
 
-            for (int i = 0; i < nodes.length; i++)
+            for (int i = 0; i < NODES.length; i++)
             {
-                Message message = new Message(id, "AC", nodesToStoreAcc[i].arrayList);
+                Message message = new Message(id, Action.ADD, nodesToStoreAcc[i].arrayList);
 
                 // send to main node
-                ip = nodes[i].split(":")[0];
-                port = Integer.parseInt(nodes[i].split(":")[1]);
+                ip = NODES[i].split(":")[0];
+                port = Integer.parseInt(NODES[i].split(":")[1]);
                 sendDataToWorker(ip, port, message);
 
                 // send to replica
-                ip = replicas[i].split(":")[0];
-                port = Integer.parseInt(replicas[i].split(":")[1]);
+                ip = REPLICAS[i].split(":")[0];
+                port = Integer.parseInt(REPLICAS[i].split(":")[1]);
                 sendDataToWorker(ip, port, message);
             }
 
         } catch (Exception e)
         {
             System.err.println("Impossible casting while trying to map add request!");
-            //throw new RuntimeException(e);
+            //e.printStackTrace();
         }
     }
 
@@ -154,18 +154,18 @@ public class MasterThread extends Thread
         int port;
         boolean sent;
 
-        for (int i = 0; i < nodes.length; i++)
+        for (int i = 0; i < NODES.length; i++)
         {
             // send to main nodes
-            ip = nodes[i].split(":")[0];
-            port = Integer.parseInt(nodes[i].split(":")[1]);
+            ip = NODES[i].split(":")[0];
+            port = Integer.parseInt(NODES[i].split(":")[1]);
             sent = sendDataToWorker(ip, port, message);
 
-            if (!sent || msg.action().equals("BOOK") || msg.action().equals("REVIEW"))
+            if (!sent || msg.action().equals(Action.BOOK) || msg.action().equals(Action.REVIEW))
             // send to replicas
             {
-                ip = replicas[i].split(":")[0];
-                port = Integer.parseInt(replicas[i].split(":")[1]);
+                ip = REPLICAS[i].split(":")[0];
+                port = Integer.parseInt(REPLICAS[i].split(":")[1]);
                 sendDataToWorker(ip, port, message);
             }
         }
@@ -184,10 +184,10 @@ public class MasterThread extends Thread
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
 
-            /*handshake with worker*/
-            out.writeObject("MASTER: Hello, WORKER!");
+            /* handshake with worker thread */
+            out.writeObject("MASTER: Hello, WORKER!\n");
             out.flush();
-            String handshake = (String) inputStream.readObject();
+            String handshake = (String) in.readObject();
             System.out.println(handshake);
 
             out.writeObject(msg);
@@ -223,20 +223,15 @@ public class MasterThread extends Thread
         return sent;
     }
 
-    private void sendDataToClient(Socket connection, Object msg)
+    private void sendDataToClient(long id, Object data)
     {
+        SocketSet socketSet = PARENT.getActiveConnectionById(id);
+        outputStream = socketSet.OUTPUT;
+        inputStream = socketSet.INPUT;
+
         try
         {
-            outputStream = new ObjectOutputStream(connection.getOutputStream());
-            inputStream = new ObjectInputStream(connection.getInputStream());
-        } catch (IOException ioException)
-        {
-            System.err.println(STR."Unable to create stream instances in Master Thread \{threadId()}");
-            //ioException.printStackTrace();
-        }
-        try
-        {
-            outputStream.writeObject(msg);
+            outputStream.writeObject(data);
             outputStream.flush();
         } catch (IOException ioException)
         {

@@ -1,34 +1,31 @@
 package mapreduce.reducer;
 
-import global.Accommodation;
 import global.Message;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 
 public class ReducerThread extends Thread
 {
-    private final Socket connection;
-    private final Reducer parent;
+    private final Socket CONNECTION;
+    private final Reducer PARENT;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
 
     public ReducerThread(Socket connection, Reducer parent)
     {
-        this.connection = connection;
-        this.parent = parent;
+        CONNECTION = connection;
+        PARENT = parent;
     }
 
-    @SuppressWarnings("unchecked")
     public void run()
     {
         try
         {
-            outputStream = new ObjectOutputStream(connection.getOutputStream());
-            inputStream = new ObjectInputStream(connection.getInputStream());
+            outputStream = new ObjectOutputStream(CONNECTION.getOutputStream());
+            inputStream = new ObjectInputStream(CONNECTION.getInputStream());
         } catch (IOException ioException)
         {
             System.err.println(STR."Unable to create stream instances in Worker Thread \{threadId()}");
@@ -39,10 +36,10 @@ public class ReducerThread extends Thread
             /* handshake with worker thread */
             String handshake = (String) inputStream.readObject();
             System.out.println(handshake);
-            outputStream.writeObject("REDUCER: Greetings! What can I do for you?");
+            outputStream.writeObject("REDUCER: Greetings! What can I do for you?\n");
             outputStream.flush();
 
-            /*read object sent from worker thread */
+            /* read object sent from worker thread */
             Message msg = (Message) inputStream.readObject();
 
             outputStream.writeObject("Message received!");
@@ -51,29 +48,9 @@ public class ReducerThread extends Thread
             inputStream.close();
             outputStream.close();
 
-            /* handle data received */
+            /* store temporarily data received */
             long id = msg.id();
-            String request = msg.action();
-
-            switch (request)
-            {
-                case "AC", "BOOK", "REVIEW":
-                    parent.reduce(id, false, null);
-                    break;
-
-                case "PR", "AREA", "DATE", "GUEST", "STAR", "SEARCH":
-                    ArrayList<Accommodation> arrayList = null;
-
-                    if(msg.parameters() != null)
-                        arrayList = (ArrayList<Accommodation>) msg.parameters();
-
-                    parent.reduce(id, true, arrayList);
-                    break;
-
-                default:
-                    System.out.println("Message received from worker was not in correct format!");
-                    break;
-            }
+            PARENT.storeRequest(id, msg);
 
         } catch (IOException ioException)
         {
@@ -84,7 +61,6 @@ public class ReducerThread extends Thread
             System.err.println(STR."Reducer Thread \{threadId()} returned a ClassNotFoundException");
             //c.printStackTrace();
         }
-
     }
 
 }

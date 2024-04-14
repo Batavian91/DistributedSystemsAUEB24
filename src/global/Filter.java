@@ -19,4 +19,10 @@ public class Filter  implements Serializable
         this.PARAM_STARS = PARAM_STARS;
     }
 
+    @Override
+    public String toString()
+    {
+        return STR."Filter{PARAM_AREA='\{PARAM_AREA}\{'\''}, PARAM_DATE=\{PARAM_DATE}, PARAM_GUESTS=\{PARAM_GUESTS},"
+                + STR."PARAM_PRICE=\{PARAM_PRICE}, PARAM_STARS=\{PARAM_STARS}\{'}'}";
+    }
 }

@@ -6,6 +6,7 @@ import global.Pair;
 import global.Room;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -58,7 +59,7 @@ public class BookingApp
                 // print reservations
                 else if (mChoice == 2)
                 {
-                    DateRange dtRange = new DateRange(LocalDate.MIN, LocalDate.MAX);
+                    DateRange dtRange = new DateRange(LocalDate.parse("2024-04-01"), LocalDate.parse("2024-12-31"));
                     agent.print(dtRange);
                 }
             }
@@ -98,11 +99,7 @@ public class BookingApp
                         {
                             System.out.println("\nChoose a room to book...");
                             int r = scanner.nextInt();
-
-                            System.out.println("Enter dates...");
-                            LocalDate dt1 = LocalDate.parse(scanner.nextLine());
-                            LocalDate dt2 = LocalDate.parse(scanner.nextLine());
-                            DateRange range = new DateRange(dt1, dt2);
+                            DateRange range = dummy.insertValidDates();
 
                             String name = rooms.get(--r).NAME;
                             Pair<String, DateRange> room = new Pair<>(name, range);
@@ -116,8 +113,12 @@ public class BookingApp
                             System.out.println("\nChoose a room to review...");
                             int r = scanner.nextInt();
 
-                            System.out.println("Enter stars (1,2,3,4,5)...");
-                            int stars = scanner.nextInt();
+                            int stars;
+                            do
+                            {
+                                System.out.println("\nEnter stars (1,2,3,4,5)...");
+                                stars = scanner.nextInt();
+                            } while (stars < 1 || stars > 5);
 
                             String name = rooms.get(--r).NAME;
                             Pair<String, Integer> room = new Pair<>(name, stars);
@@ -129,9 +130,9 @@ public class BookingApp
             }
 
             // continue or exit
-            System.out.println("\nDo you wish to exit the app? (Y/N)");
             do
             {
+                System.out.println("\nDo you wish to exit the app? (Y/N)");
                 exit = scanner.nextLine();
             } while (!(exit.equalsIgnoreCase("Y") || exit.equalsIgnoreCase("N")));
 
@@ -170,21 +171,80 @@ public class BookingApp
         System.out.println("2. REVIEW");
     }
 
-    private Filter filter()
+    public Filter filter()
     {
         Scanner scan = new Scanner(System.in);
-        System.out.println("Insert area...");
+
+        System.out.println("\nEnter the desired area or press Enter to continue...");
         String area = scan.nextLine();
-        System.out.println("Insert dates...");
-        LocalDate dt1 = LocalDate.parse(scan.nextLine());
-        LocalDate dt2 = LocalDate.parse(scan.nextLine());
-        DateRange range = new DateRange(dt1, dt2);
-        System.out.println("Insert number of guests...");
-        int guests = scan.nextInt();
-        System.out.println("Insert price...");
-        int price = scan.nextInt();
-        System.out.println("Insert stars...");
-        int stars = scan.nextInt();
+
+        String answer;
+        DateRange range = new DateRange(LocalDate.parse("2024-04-01"), LocalDate.parse("2024-12-31"));
+        do
+        {
+            System.out.println("Would you like to apply a date filter? (Y/N)");
+            answer = scan.next();
+        } while (!(answer.equalsIgnoreCase("Y") || answer.equalsIgnoreCase("N")));
+
+        if (answer.equalsIgnoreCase("Y"))
+            range= insertValidDates();
+
+        int guests = 0;
+        System.out.println("Enter number of guests...");
+        if (scan.hasNextInt())
+        {
+            guests = scan.nextInt();
+        }
+
+        int price = 0;
+        System.out.println("Enter price...");
+        if (scan.hasNextInt())
+        {
+            price = scan.nextInt();
+        }
+
+        int stars = 0;
+        System.out.println("Enter stars (1,2,3,4,5)...");
+        if (scan.hasNextInt())
+        {
+            stars = scan.nextInt();
+            stars = stars < 1 || stars > 5 ? 0 : stars;
+        }
+
         return new Filter(area, range, guests, price, stars);
     }
+
+    private DateRange insertValidDates()
+    {
+        Scanner scan = new Scanner(System.in);
+        DateRange range;
+
+        do
+        {
+            System.out.println("Insert dates... (YYYY-MM-DD)");
+            try
+            {
+                LocalDate dt1 = LocalDate.parse(scan.nextLine());
+                LocalDate dt2 = LocalDate.parse(scan.nextLine());
+
+                if (dt2.isBefore(dt1))
+                {
+                    System.out.println("Departure date cannot precede the arrival date!");
+                } else if (dt1.isBefore(LocalDate.now()) || dt2.isBefore(LocalDate.now()))
+                {
+                    System.out.println("Past dates are not valid!");
+                } else
+                {
+                    range = new DateRange(dt1, dt2);
+                    break;
+                }
+            } catch (DateTimeParseException e)
+            {
+                System.out.println("Date format appears to be invalid! Re-enter dates in the correct format... (YYYY-MM-DD)");
+            }
+        } while (true);
+
+        return range;
+    }
+
 }

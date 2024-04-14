@@ -12,7 +12,7 @@ public class Accommodation implements Serializable
     private int totalRating;
     private int noOfReviews;
     private String photo;
-    private TreeSet<DateRange> availableByOwnerDates = new TreeSet<>();
+    protected TreeSet<DateRange> availableByOwnerDates = new TreeSet<>();
     public TreeSet<DateRange> bookedByVisitorDates = new TreeSet<>();
 
     public Accommodation(String accName, int guests, String location, int price, int totalRating, int noOfReviews)
@@ -45,11 +45,11 @@ public class Accommodation implements Serializable
         return price;
     }
 
-    public float getRating()
+    public int getRating()
     {
         if (noOfReviews == 0)
             return 0;
-        return (float) totalRating / (float) noOfReviews;
+        return totalRating /noOfReviews;
     }
 
     public int getNoOfReviews()
@@ -98,14 +98,14 @@ public class Accommodation implements Serializable
         if (acceptAccAddition)
         {
             availableByOwnerDates.add(dateRange);
-            System.out.println("Accommodation was successfully added!");
+            //System.out.println("Accommodation was successfully added!");
         } else
         {
             System.out.println("The range you have chosen to add overlaps with existing dates!");
         }
     }
 
-    public synchronized String addBookingDates(DateRange dateRange)
+    public synchronized Pair<Integer, String> addBookingDates(DateRange dateRange)
     {
         boolean isAvailable = true;
 
@@ -120,7 +120,7 @@ public class Accommodation implements Serializable
 
         if (!isAvailable)
         {
-            return "The accommodation is not available for the dates chosen";
+            return new Pair<>(1, "Not available for the dates chosen");
         }
         boolean isNotBooked = true;
 
@@ -135,15 +135,23 @@ public class Accommodation implements Serializable
         if (isNotBooked)
         {
             bookedByVisitorDates.add(dateRange);
-            return "Accommodation was successfully booked!";
+            return new Pair<>(2, "Successfully booked!");
         } else
         {
-            return "The accommodation is already booked for the date range you have chosen!";
+            return new Pair<>(3, "Already booked for the dates you have chosen!");
         }
     }
 
-    public boolean hasBookings()
+    public int countBookings(DateRange range)
     {
-        return this.bookedByVisitorDates != null;
+        int counter = 0;
+
+        for (DateRange dtr : bookedByVisitorDates)
+            if (!(dtr.getEndDate().isBefore(range.getStartDate())
+                    || range.getEndDate().isBefore(dtr.getStartDate())))
+                ++counter;
+
+        return counter;
     }
+
 }

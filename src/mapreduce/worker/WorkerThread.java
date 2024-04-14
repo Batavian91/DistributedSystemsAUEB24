@@ -1,9 +1,6 @@
 package mapreduce.worker;
 
-import global.Accommodation;
-import global.DateRange;
-import global.Message;
-import global.Pair;
+import global.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,26 +8,28 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class WorkerThread extends Thread
 {
-    private final Socket connection;
-    private final Worker parent;
+    private final Socket CONNECTION;
+    private final Worker PARENT;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
 
     public WorkerThread(Socket connection, Worker parent)
     {
-        this.connection = connection;
-        this.parent = parent;
+        CONNECTION = connection;
+        PARENT = parent;
     }
 
+    @SuppressWarnings("unchecked")
     public void run()
     {
         try
         {
-            outputStream = new ObjectOutputStream(connection.getOutputStream());
-            inputStream = new ObjectInputStream(connection.getInputStream());
+            outputStream = new ObjectOutputStream(CONNECTION.getOutputStream());
+            inputStream = new ObjectInputStream(CONNECTION.getInputStream());
         } catch (IOException ioException)
         {
             System.err.println(STR."Unable to create stream instances in Worker Thread \{threadId()}");
@@ -41,10 +40,10 @@ public class WorkerThread extends Thread
             /* handshake with master thread */
             String handshake = (String) inputStream.readObject();
             System.out.println(handshake);
-            outputStream.writeObject("WORKER: Greetings! What can I do for you?");
+            outputStream.writeObject(STR."WORKER \{PARENT.getWorker()}: Greetings! What can I do for you?\n");
             outputStream.flush();
 
-            /*read object sent from master thread */
+            /* read object sent from master thread */
             Message msg = (Message) inputStream.readObject();
 
             outputStream.writeObject("Message received!");
@@ -55,115 +54,120 @@ public class WorkerThread extends Thread
 
             /* handle request */
             long id = msg.id();
-            String request = msg.action();
+            Action action = msg.action();
 
             Message result = null;
-            ArrayList<Accommodation> arrayList = null;
 
-            switch (request)
+            switch (action)
             {
-                case "AC":
 
-                    arrayList = (ArrayList<Accommodation>) msg.parameters();
-                    parent.accommodations.addAll(arrayList);
-                    result = new Message(id, "AC", "OK");
+                case ADD:
+
+                    ArrayList<Accommodation> arrayList = (ArrayList<Accommodation>) msg.parameters();
+                    if (arrayList != null)
+                        PARENT.accommodations.addAll(arrayList);
+                    result = new Message(id, action, "OK");
 
                     break;
 
-                case "PR":
+                case PRINT:
 
-                    for (Accommodation acc : parent.accommodations)
+                    HashMap<String, Integer> map = new HashMap<>();
+                    DateRange range = (DateRange) msg.parameters();
+
+                    for (Accommodation acc : PARENT.accommodations)
                     {
-                        if (acc.hasBookings())
-                            arrayList.add(acc);
+                        String area = acc.getLocation();
+                        int counter = acc.countBookings(range);
+
+                        if (counter != 0)
+                            map.merge(area, counter, Integer::sum);
                     }
-                    result = new Message(id, "PR", arrayList);
+                    result = new Message(id, action, map);
 
                     break;
 
-                case "AREA":
-                    
-                    for (Accommodation acc : parent.accommodations)
+                case SEARCH:
+
+                    ArrayList<Room> rooms = new ArrayList<>();
+                    Filter filter = (Filter) msg.parameters();
+                    DateRange range1 = filter.PARAM_DATE;
+
+                    for (Accommodation acc : PARENT.accommodations)
                     {
-                        if (acc.getLocation().equals(msg.parameters()))
-                            arrayList.add(acc);
+                        // area
+                        if (!(filter.PARAM_AREA.isEmpty() && filter.PARAM_AREA.equals(acc.getLocation())))
+                            continue;
+
+                        // date
+                        boolean overlap = false;
+                        for (DateRange dtr : acc.bookedByVisitorDates)
+                            if (!(dtr.getEndDate().isBefore(range1.getStartDate())
+                                    || range1.getEndDate().isBefore(dtr.getStartDate())))
+                            {
+                                overlap = true;
+                                break;
+                            }
+
+                        if (overlap)
+                            continue;
+
+                        // guests
+                        if (!(filter.PARAM_GUESTS < 1 && filter.PARAM_GUESTS == acc.getGuests()))
+                            continue;
+
+                        // price
+                        if (!(filter.PARAM_PRICE < 1 && filter.PARAM_PRICE == acc.getPrice()))
+                            continue;
+
+                        //stars
+                        if (!(filter.PARAM_STARS < 1 && filter.PARAM_STARS == acc.getRating()))
+                            continue;
+
+                        Room room = new Room(acc.getAccName(), acc.getGuests(), acc.getLocation(), acc.getPrice(),
+                                acc.getRating(), acc.getNoOfReviews(), acc.getPhoto());
+
+                        rooms.add(room);
                     }
-                    result = new Message(id, "AREA", arrayList);
+                    result = new Message(id, action, rooms);
 
                     break;
 
-                case "DATE":
+                case BOOK:
 
-                    for (Accommodation acc : parent.accommodations)
+                    Pair<String, DateRange> room = (Pair<String, DateRange>) msg.parameters();
+                    String name = room.getType1();
+                    DateRange dtr = room.getType2();
+
+                    Pair<Integer, String> parameters = new Pair<>(0, "");
+
+                    for (Accommodation acc : PARENT.accommodations)
                     {
-                        if (acc.bookedByVisitorDates.contains((DateRange) msg.parameters()))
-                            arrayList.add(acc);
-                    }
-                    result = new Message(id, "DATE", arrayList);
-
-                    break;
-
-                case "GUEST":
-
-                    for (Accommodation acc : parent.accommodations)
-                    {
-                        if (acc.getGuests() == (Integer)msg.parameters())
-                            arrayList.add(acc);
-                    }
-                    result = new Message(id, "GUEST", arrayList);
-
-                    break;
-
-                case "STAR":
-
-                    for (Accommodation acc : parent.accommodations)
-                    {
-                        if (acc.getRating() == (Integer)msg.parameters())
-                            arrayList.add(acc);
-                    }
-                    result = new Message(id, "STAR", arrayList);
-
-                    break;
-
-                case "BOOK":
-
-                    Pair<Accommodation, DateRange> pair = (Pair<Accommodation, DateRange>) msg.parameters();
-                    Accommodation accommodation = pair.getType1();
-                    DateRange dtr = pair.getType2();
-
-                    String parameters = "";
-
-                    for (Accommodation acc : parent.accommodations)
-                    {
-                        if (acc  == accommodation)
+                        if (name.equalsIgnoreCase(acc.getAccName()))
                         {
                             parameters = acc.addBookingDates(dtr);
+                            break;
                         }
                     }
-                    result = new Message(id, "BOOK", parameters);
+                    result = new Message(id, action, parameters);
 
                     break;
 
-                case "REVIEW":
+                case REVIEW:
 
-                    Pair<Accommodation, Integer> pair1 = (Pair<Accommodation, Integer>) msg.parameters();
-                    Accommodation accommodation1 = pair1.getType1();
+                    Pair<String, Integer> pair1 = (Pair<String, Integer>) msg.parameters();
+                    String name1 = pair1.getType1();
                     int stars = pair1.getType2();
 
-                    for (Accommodation acc : parent.accommodations)
+                    for (Accommodation acc : PARENT.accommodations)
                     {
-                        if (acc  == accommodation1)
+                        if (name1.equalsIgnoreCase(acc.getAccName()))
                         {
                             acc.addRating(stars);
+                            break;
                         }
                     }
-                    result = new Message(id, "REVIEW", "OK");
-
-                    break;
-
-                case "SEARCH":
-
-                    result = new Message(id, "SEARCH", parent.accommodations);
+                    result = new Message(id, action, "OK");
 
                     break;
 
@@ -181,6 +185,17 @@ public class WorkerThread extends Thread
         {
             System.err.println(STR."Worker Thread \{threadId()} returned a ClassNotFoundException");
             //c.printStackTrace();
+        } finally
+        {
+            try
+            {
+                inputStream.close();
+                outputStream.close();
+            } catch (IOException e)
+            {
+                System.err.println(STR."Unable to close stream instances in Worker Thread \{threadId()}");
+                //e.printStackTrace();
+            }
         }
     }
 
@@ -192,17 +207,17 @@ public class WorkerThread extends Thread
 
         try
         {
-            String ip = parent.getReducer().split(":")[0];
-            int port = Integer.parseInt(parent.getReducer().split(":")[1]);
+            String ip = PARENT.getReducer().split(":")[0];
+            int port = Integer.parseInt(PARENT.getReducer().split(":")[1]);
 
             requestSocket = new Socket(ip, port);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
 
-            /*handshake with reducer*/
-            out.writeObject(STR."WORKER \{parent.getWorker()}: Hello, REDUCER!");
+            /* handshake with reducer thread */
+            out.writeObject(STR."WORKER \{PARENT.getWorker()}: Hello, REDUCER!\n");
             out.flush();
-            String handshake = (String) inputStream.readObject();
+            String handshake = (String) in.readObject();
             System.out.println(handshake);
 
             out.writeObject(result);

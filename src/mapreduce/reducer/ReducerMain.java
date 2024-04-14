@@ -7,7 +7,7 @@ public class ReducerMain
     {
         String master = "127.0.0.1:4321";
 
-        Reducer reducer = new Reducer(4328, 6);
+        Reducer reducer = new Reducer(4328, 4);
         reducer.setMaster(master);
 
         reducer.runReducer();

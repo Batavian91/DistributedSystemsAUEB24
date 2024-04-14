@@ -5,8 +5,8 @@ import java.time.LocalDate;
 
 public class DateRange implements iDateRange, Comparable<DateRange>, Serializable
 {
-    protected LocalDate startDate;
-    protected LocalDate endDate;
+    private final LocalDate startDate;
+    private final LocalDate endDate;
 
     public DateRange(LocalDate startDate, LocalDate endDate)
     {
@@ -23,7 +23,7 @@ public class DateRange implements iDateRange, Comparable<DateRange>, Serializabl
     @Override
     public boolean isAcceptedDateRange(DateRange range)
     {
-        return this.endDate.compareTo(range.startDate) <= 0 || this.startDate.compareTo(range.endDate) >= 0;
+        return this.endDate.isBefore(range.startDate) || this.startDate.isAfter(range.endDate);
     }
 
     @Override
@@ -31,11 +31,16 @@ public class DateRange implements iDateRange, Comparable<DateRange>, Serializabl
     {
         if (range == null)
             return 1;
-        if (this.startDate.compareTo(range.endDate) >= 0)
+        if (this.startDate.isAfter(range.endDate))
             return 1;
-        else if (this.endDate.compareTo(range.startDate) <= 0)
+        else if (this.endDate.isBefore(range.startDate))
             return -1;
         else
             return 0; //never used when isAcceptedDateRange() is called
+    }
+
+    public String toString()
+    {
+        return STR."\{getStartDate().toString()} : \{getEndDate().toString()}";
     }
 }

@@ -7,17 +7,19 @@ import org.json.JSONObject;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class JsonReader
 {
     public ArrayList<Accommodation> readAccommodationsFromFile(String filePath)
     {
+        ArrayList<Accommodation> accommodations= new ArrayList<>();
+
         try
         {
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
             JSONArray jsonArray = new JSONArray(content);
-            ArrayList<Accommodation> accommodations= new ArrayList<>();
 
             for (int i = 0; i < jsonArray.length(); i++)
             {
@@ -25,12 +27,13 @@ public class JsonReader
                 Accommodation accommodation = jsonToAccommodation(jsonObject);
                 accommodations.add(accommodation);
             }
-            return accommodations;
+
         } catch (Exception e)
         {
-            e.printStackTrace();
-            return new ArrayList<>();
+            System.out.println("Reading from json file failed! Please, try again!");
+            //e.printStackTrace();
         }
+        return accommodations;
     }
 
     private Accommodation jsonToAccommodation(JSONObject jsonObject)
@@ -42,10 +45,13 @@ public class JsonReader
         int stars = jsonObject.getInt("stars");
         int noOfReviews = jsonObject.getInt("noOfReviews");
         String roomImage = jsonObject.getString("roomImage");
+        LocalDate startDate = LocalDate.parse(jsonObject.getString("startDate"));
+        LocalDate endDate = LocalDate.parse(jsonObject.getString("endDate"));
 
         Accommodation accommodation = new Accommodation(roomName, noOfPersons, area, price,
                 stars*noOfReviews, noOfReviews);
         accommodation.setPhoto(roomImage);
+        accommodation.addAvailableDates((new DateRange(startDate, endDate)));
 
         return accommodation;
     }

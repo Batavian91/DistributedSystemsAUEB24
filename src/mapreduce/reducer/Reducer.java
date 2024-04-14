@@ -1,6 +1,6 @@
 package mapreduce.reducer;
 
-import global.Accommodation;
+import global.Message;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,8 +13,8 @@ public class Reducer
     private ServerSocket server;
     private String master;
     private int numberOfWorkers;
-    protected HashMap<Long, Integer> activeRequests;
-    protected HashMap<Long, ArrayList<Accommodation>> data;
+    private HashMap<Long, Integer> activeRequests;
+    private HashMap<Long, ArrayList<Message>> data;
 
     public Reducer(int inPort, int workers)
     {
@@ -22,8 +22,8 @@ public class Reducer
         {
             this.server = new ServerSocket(inPort, 1000);
             this.numberOfWorkers = workers;
-            this.activeRequests = null;
-            this.data = null;
+            this.activeRequests = new HashMap<>();
+            this.data = new HashMap<>();
         } catch (IOException ioException)
         {
             System.err.println("Could not initialize Reducer!");
@@ -70,33 +70,29 @@ public class Reducer
         this.master = master;
     }
 
-    public synchronized void reduce(long id, boolean hasData, ArrayList<Accommodation> arrayList)
+    public synchronized void storeRequest(long id, Message message)
     {
         if (!activeRequests.containsKey(id))
         {
             activeRequests.put(id, 1);
-
-            if (hasData && arrayList != null)
-            {
-                data.put(id, arrayList);
-            }
+            data.put(id, new ArrayList<>());
         } else
         {
-            int counter = activeRequests.get(id);
-
-            activeRequests.put(id, ++counter);
-
-            if (hasData && arrayList != null)
-            {
-                data.get(id).addAll(arrayList);
-            }
-
-            if (counter == numberOfWorkers)
-            {
-                RSenderThread rThread = new RSenderThread(id, this);
-                rThread.start();
-            }
+            activeRequests.merge(id, 1, Integer::sum);
         }
+        data.get(id).add(message);
+
+        if (activeRequests.get(id) == numberOfWorkers)
+        {
+            RSenderThread rThread = new RSenderThread(id, this);
+            rThread.start();
+        }
+    }
+
+    public void removeRequest(long id)
+    {
+        activeRequests.remove(id);
+        data.remove(id);
     }
 
 }

@@ -11,14 +11,14 @@ public class Master
     private ServerSocket server;
     private String[] nodes;
     private String[] replicas;
-    private HashMap<Long, Socket> activeConnections;
+    private HashMap<Long, SocketSet> activeConnections;
 
     public Master(int inPort)
     {
         try
         {
             this.server = new ServerSocket(inPort, 1000);
-            this.activeConnections = null;
+            this.activeConnections = new HashMap<>();
         } catch (IOException ioException)
         {
             System.err.println("Could not initialize Master!");
@@ -55,29 +55,21 @@ public class Master
         }
     }
 
-    public synchronized long storeConnection(Socket connection)
+    public synchronized long storeConnection(SocketSet socketSet)
     {
         UUID uniqueID = UUID.randomUUID();
         long id = Math.abs(uniqueID.getMostSignificantBits());
-        activeConnections.put(id, connection);
+        activeConnections.put(id, socketSet);
         return id;
     }
 
-    public Socket getActiveConnectionById(long id)
+    public SocketSet getActiveConnectionById(long id)
     {
         return activeConnections.get(id);
     }
 
     public void removeConnection(long id)
     {
-        try
-        {
-            activeConnections.get(id).close();
-        } catch (IOException ioException)
-        {
-            System.err.println("Could not close client connection!");
-        }
-
         activeConnections.remove(id);
     }
 
