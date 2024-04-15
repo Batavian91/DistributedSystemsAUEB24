@@ -1,5 +1,6 @@
 package mapreduce.reducer;
 
+import global.Action;
 import global.Message;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ public class Reducer
     private String master;
     private int numberOfWorkers;
     private HashMap<Long, Integer> activeRequests;
-    private HashMap<Long, ArrayList<Message>> data;
+    protected HashMap<Long, ArrayList<Message>> data;
 
     public Reducer(int inPort, int workers)
     {
@@ -60,17 +61,17 @@ public class Reducer
         }
     }
 
-    public String getMaster()
+    protected String getMaster()
     {
         return master;
     }
 
-    public void setMaster(String master)
+    protected void setMaster(String master)
     {
         this.master = master;
     }
 
-    public synchronized void storeRequest(long id, Message message)
+    protected synchronized void storeRequest(long id, Message message, Action rw)
     {
         if (!activeRequests.containsKey(id))
         {
@@ -82,14 +83,24 @@ public class Reducer
         }
         data.get(id).add(message);
 
-        if (activeRequests.get(id) == numberOfWorkers)
+        if (rw.equals(Action.WRITE))
         {
-            RSenderThread rThread = new RSenderThread(id, this);
-            rThread.start();
+            if (activeRequests.get(id) == numberOfWorkers)
+            {
+                RSenderThread rThread = new RSenderThread(id, this);
+                rThread.start();
+            }
+        } else
+        {
+            if (activeRequests.get(id) == (numberOfWorkers/2))
+            {
+                RSenderThread rThread = new RSenderThread(id, this);
+                rThread.start();
+            }
         }
     }
 
-    public void removeRequest(long id)
+    protected void removeRequest(long id)
     {
         activeRequests.remove(id);
         data.remove(id);

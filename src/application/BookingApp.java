@@ -29,6 +29,7 @@ public class BookingApp
         String exit;
         int choice;
         int mChoice;
+        int m2Choice;
         int vChoice;
         int v2Choice;
 
@@ -59,8 +60,23 @@ public class BookingApp
                 // print reservations
                 else if (mChoice == 2)
                 {
-                    DateRange dtRange = new DateRange(LocalDate.parse("2024-04-01"), LocalDate.parse("2024-12-31"));
-                    agent.print(dtRange);
+                    do
+                    {
+                        dummy.displayExtraManagerChoices();
+                        m2Choice = scanner.nextInt();
+                    } while (m2Choice != 0 && m2Choice != 1 && m2Choice != 2);
+
+                    // print all
+                    if (m2Choice == 1)
+                    {
+                        agent.printAll();
+                    }
+                    //print by area, date
+                    else if (m2Choice == 2)
+                    {
+                        DateRange dtRange = new DateRange(LocalDate.parse("2024-04-01"), LocalDate.parse("2024-12-31"));
+                        agent.print(dtRange);
+                    }
                 }
             }
             // visitor operations
@@ -78,7 +94,7 @@ public class BookingApp
                     Filter filter = dummy.filter();
                     ArrayList<Room> rooms = agent.search(filter);
 
-                    if (rooms == null)
+                    if (rooms == null || rooms.isEmpty())
                     {
                         System.out.println("\nNo rooms were found!");
                     } else
@@ -86,7 +102,7 @@ public class BookingApp
                         // display rooms
                         int index = 0;
                         for (Room room : rooms)
-                            System.out.println(STR."\{index++}: \{room}");
+                            System.out.println(STR."\{++index}: \{room}");
 
                         do
                         {
@@ -132,8 +148,8 @@ public class BookingApp
             // continue or exit
             do
             {
-                System.out.println("\nDo you wish to exit the app? (Y/N)");
-                exit = scanner.nextLine();
+                System.out.println("Do you wish to exit the app? (Y/N)");
+                exit = scanner.next();
             } while (!(exit.equalsIgnoreCase("Y") || exit.equalsIgnoreCase("N")));
 
             loop = exit.equalsIgnoreCase("N");
@@ -154,6 +170,14 @@ public class BookingApp
         System.out.println("0. EXIT");
         System.out.println("1. ADD ROOMS");
         System.out.println("2. PRINT RESERVATIONS");
+    }
+
+    private void displayExtraManagerChoices()
+    {
+        System.out.println("\nChoose an operation:");
+        System.out.println("0. EXIT");
+        System.out.println("1. PRINT ALL BOOKINGS");
+        System.out.println("2. PRINT BY AREA, DATE");
     }
 
     private void displayVisitorChoices()

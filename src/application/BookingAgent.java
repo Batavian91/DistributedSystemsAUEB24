@@ -34,6 +34,26 @@ public class BookingAgent
     }
 
     @SuppressWarnings("unchecked")
+    public void printAll()
+    {
+        Message request = new Message(0, Action.PRINT_ALL, null);
+        Object response = sendToMaster(request);
+
+        if (response != null)
+        {
+            ArrayList<Pair<Room, String>> bookings = (ArrayList<Pair<Room, String>>) response;
+
+            for (Pair<Room, String> booking : bookings)
+            {
+                System.out.println(booking.getType1() + " " + booking.getType2());
+            }
+        } else
+        {
+            System.out.println("No bookings to print!");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public void print(DateRange dateRange)
     {
         Message request = new Message(0, Action.PRINT, dateRange);
@@ -43,7 +63,7 @@ public class BookingAgent
         {
             HashMap<String, Integer> map = (HashMap<String, Integer>) response;
 
-            for (String area: map.keySet())
+            for (String area : map.keySet())
             {
                 System.out.println(STR."\{area}: \{map.get(area)}reservations.");
             }
@@ -53,26 +73,6 @@ public class BookingAgent
         }
     }
 
-//    @SuppressWarnings("unchecked")
-//    public void printAll()
-//    {
-//        Message request = new Message(0, Action.PRINT, dateRange);
-//        Object response = sendToMaster(request);
-//
-//        if (response != null)
-//        {
-//            ArrayList<Room> rooms = (ArrayList<Room>)response;
-//
-//            for (Room room : rooms)
-//            {
-//                System.out.println(room.toString());
-//            }
-//        } else
-//        {
-//            System.out.println("No rooms to print!");
-//        }
-//    }
-
     @SuppressWarnings("unchecked")
     public ArrayList<Room> search(Filter filters)
     {
@@ -80,7 +80,7 @@ public class BookingAgent
         Object response = sendToMaster(request);
 
         if (response != null)
-            return (ArrayList<Room>)response;
+            return (ArrayList<Room>) response;
 
         return null;
     }

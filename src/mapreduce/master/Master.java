@@ -55,7 +55,7 @@ public class Master
         }
     }
 
-    public synchronized long storeConnection(SocketSet socketSet)
+    protected synchronized long storeConnection(SocketSet socketSet)
     {
         UUID uniqueID = UUID.randomUUID();
         long id = Math.abs(uniqueID.getMostSignificantBits());
@@ -63,32 +63,32 @@ public class Master
         return id;
     }
 
-    public SocketSet getActiveConnectionById(long id)
+    protected SocketSet getActiveConnectionById(long id)
     {
         return activeConnections.get(id);
     }
 
-    public void removeConnection(long id)
+    protected void removeConnection(long id)
     {
         activeConnections.remove(id);
     }
 
-    public String[] getNodes()
+    protected String[] getNodes()
     {
         return nodes;
     }
 
-    public String[] getReplicas()
+    protected String[] getReplicas()
     {
         return replicas;
     }
 
-    public void setNodes(String[] nodes)
+    protected void setNodes(String[] nodes)
     {
         this.nodes = nodes;
     }
 
-    public void setReplicas(String[] replicas)
+    protected void setReplicas(String[] replicas)
     {
         this.replicas = replicas;
     }

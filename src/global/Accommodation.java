@@ -107,13 +107,14 @@ public class Accommodation implements Serializable
 
     public synchronized Pair<Integer, String> addBookingDates(DateRange dateRange)
     {
-        boolean isAvailable = true;
+        boolean isAvailable = false;
 
         for (DateRange range : availableByOwnerDates)
         {
-            if (!dateRange.isAcceptedDateRange(range))
+            if (!(dateRange.getStartDate().isBefore(range.getStartDate())
+                    || dateRange.getEndDate().isAfter(range.getEndDate())))
             {
-                isAvailable = false;
+                isAvailable = true;
                 break;
             }
         }

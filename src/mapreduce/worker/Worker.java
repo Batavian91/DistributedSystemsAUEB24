@@ -57,17 +57,17 @@ public class Worker
         }
     }
 
-    public int getWorker()
+    protected int getWorker()
     {
         return worker;
     }
 
-    public String getReducer()
+    protected String getReducer()
     {
         return reducer;
     }
 
-    public void setReducer(String reducer)
+    protected void setReducer(String reducer)
     {
         this.reducer = reducer;
     }

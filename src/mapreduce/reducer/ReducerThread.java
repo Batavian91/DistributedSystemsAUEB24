@@ -1,5 +1,6 @@
 package mapreduce.reducer;
 
+import global.Action;
 import global.Message;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class ReducerThread extends Thread
             /* read object sent from worker thread */
             Message msg = (Message) inputStream.readObject();
 
-            outputStream.writeObject("Message received!");
+            outputStream.writeObject("Message received!\n");
             outputStream.flush();
 
             inputStream.close();
@@ -50,7 +51,21 @@ public class ReducerThread extends Thread
 
             /* store temporarily data received */
             long id = msg.id();
-            PARENT.storeRequest(id, msg);
+            Action action = msg.action();
+
+            switch (action)
+            {
+                case ADD, BOOK, REVIEW:
+                    PARENT.storeRequest(id, msg, Action.WRITE);
+                    break;
+
+                case PRINT_ALL, PRINT, SEARCH:
+                    PARENT.storeRequest(id, msg, Action.READ);
+                    break;
+
+                default:
+                    System.out.println("Bad request!");
+            }
 
         } catch (IOException ioException)
         {

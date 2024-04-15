@@ -46,7 +46,7 @@ public class WorkerThread extends Thread
             /* read object sent from master thread */
             Message msg = (Message) inputStream.readObject();
 
-            outputStream.writeObject("Message received!");
+            outputStream.writeObject("Message received!\n");
             outputStream.flush();
 
             inputStream.close();
@@ -66,7 +66,33 @@ public class WorkerThread extends Thread
                     ArrayList<Accommodation> arrayList = (ArrayList<Accommodation>) msg.parameters();
                     if (arrayList != null)
                         PARENT.accommodations.addAll(arrayList);
+
+                    for (Accommodation acc : PARENT.accommodations)
+                        System.out.println(acc.getAccName());
+
                     result = new Message(id, action, "OK");
+
+                    break;
+
+                case PRINT_ALL:
+
+                    ArrayList<Pair<Room, String>> bookings = new ArrayList<>();
+
+                    for (Accommodation acc : PARENT.accommodations)
+                    {
+                        String bookedDates = "Booked dates: ";
+                        if (!acc.bookedByVisitorDates.isEmpty())
+                        {
+                            for (DateRange dtr : acc.bookedByVisitorDates)
+                                bookedDates = STR."\{bookedDates}\{dtr.toString()}, ";
+
+                            bookedDates = bookedDates.substring(0, bookedDates.length()-2);
+
+                            bookings.add(new Pair<>(new Room(acc.getAccName(), acc.getGuests(), acc.getLocation(),
+                                    acc.getPrice(), acc.getRating(), acc.getNoOfReviews(), acc.getPhoto()), bookedDates));
+                        }
+                    }
+                    result = new Message(id, action, bookings);
 
                     break;
 
@@ -96,7 +122,7 @@ public class WorkerThread extends Thread
                     for (Accommodation acc : PARENT.accommodations)
                     {
                         // area
-                        if (!(filter.PARAM_AREA.isEmpty() && filter.PARAM_AREA.equals(acc.getLocation())))
+                        if (!(filter.PARAM_AREA.isEmpty() || filter.PARAM_AREA.equals(acc.getLocation())))
                             continue;
 
                         // date
@@ -113,15 +139,15 @@ public class WorkerThread extends Thread
                             continue;
 
                         // guests
-                        if (!(filter.PARAM_GUESTS < 1 && filter.PARAM_GUESTS == acc.getGuests()))
+                        if (!(filter.PARAM_GUESTS < 1 || filter.PARAM_GUESTS == acc.getGuests()))
                             continue;
 
                         // price
-                        if (!(filter.PARAM_PRICE < 1 && filter.PARAM_PRICE == acc.getPrice()))
+                        if (!(filter.PARAM_PRICE < 1 || filter.PARAM_PRICE == acc.getPrice()))
                             continue;
 
                         //stars
-                        if (!(filter.PARAM_STARS < 1 && filter.PARAM_STARS == acc.getRating()))
+                        if (!(filter.PARAM_STARS < 1 || filter.PARAM_STARS == acc.getRating()))
                             continue;
 
                         Room room = new Room(acc.getAccName(), acc.getGuests(), acc.getLocation(), acc.getPrice(),
