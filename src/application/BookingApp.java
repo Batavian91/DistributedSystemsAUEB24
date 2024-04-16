@@ -195,7 +195,7 @@ public class BookingApp
         System.out.println("2. REVIEW");
     }
 
-    public Filter filter()
+    private Filter filter()
     {
         Scanner scan = new Scanner(System.in);
 
@@ -203,7 +203,7 @@ public class BookingApp
         String area = scan.nextLine();
 
         String answer;
-        DateRange range = new DateRange(LocalDate.parse("2024-04-01"), LocalDate.parse("2024-12-31"));
+        DateRange range = new DateRange(LocalDate.now().minusDays(1), LocalDate.now().minusDays(1));
         do
         {
             System.out.println("Would you like to apply a date filter? (Y/N)");

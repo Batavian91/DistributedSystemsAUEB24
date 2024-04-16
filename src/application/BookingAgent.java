@@ -65,7 +65,7 @@ public class BookingAgent
 
             for (String area : map.keySet())
             {
-                System.out.println(STR."\{area}: \{map.get(area)}reservations.");
+                System.out.println(STR."\{area}: \{map.get(area)} reservations.");
             }
         } else
         {
